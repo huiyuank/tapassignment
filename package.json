@@ -1,0 +1,23 @@
+{
+  "name": "salarymgtapp",
+  "version": "1.0.0",
+  "description": "TAP Take Home Assignment - Create MVP for employee salary management",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huiyuank/tapassignment.git"
+  },
+  "author": "Kok Hui Yuan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/huiyuank/tapassignment/issues"
+  },
+  "homepage": "https://github.com/huiyuank/tapassignment#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
