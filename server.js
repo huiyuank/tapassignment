@@ -3,11 +3,13 @@ const app = express();
 const path = require("path");
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
-const csv = require("csv-parser");
+const cors = require("cors");
 const fs = require("fs");
+const csv = require("csv-parser");
 const asyncWrapper = require("./util/helper");
 
 const mongoose = require("mongoose");
+// Database connection URL
 const dbUrl = "mongodb://localhost:27017/employeeData?replicaSet=rs0";
 mongoose.connect(dbUrl);
 const db = mongoose.connection;
@@ -27,6 +29,8 @@ const Employee = require("./models/employee");
 app.use(express.urlencoded({ extended: true }));
 // For parsing json
 app.use(express.json());
+// Enable cross-origin request (CORS) to let the server tell the browser it's permitted to use an additional origin
+app.use(cors());
 
 // Meant for front end API call to pull all employee data
 app.get("/api/users", (req, res) => {
@@ -48,7 +52,8 @@ const headers = ["id", "login", "name", "salary"];
 async function insertOrUpdateEmployee(employees) {
   const uploadSession = await mongoose.startSession();
   let statusCode,
-    statusMessage = [];
+    statusMessage,
+    statusDetail = [];
   const opts = {
     readPreference: "primary",
     readConcern: { level: "local" },
@@ -58,27 +63,23 @@ async function insertOrUpdateEmployee(employees) {
     await uploadSession.withTransaction(async () => {
       for (let [index, employee] of employees.entries()) {
         if (employee.id.startsWith("#")) {
-          statusMessage.push(`Comment detected (Row ${index + 1})`);
+          statusDetail.push(`WARNING: Comment detected (Row ${index + 1})`);
           continue;
         }
         if (Object.values(employee).some((val) => val === null || val === "")) {
           statusCode = 400;
-          statusMessage.push(
-            `Unsuccessful upload: Empty fields detected (Row ${index + 1})`
-          );
+          statusDetail.push(`Empty fields detected (Row ${index + 1})`);
           continue;
         }
         if (Object.keys(employee).some((header) => !headers.includes(header))) {
           statusCode = 400;
-          statusMessage.push(
-            `Unsuccessful upload: Extra fields detected (Row ${index + 1})`
-          );
+          statusDetail.push(`Extra fields detected (Row ${index + 1})`);
           continue;
         }
         if (isNaN(employee.salary) || employee.salary < 0) {
           statusCode = 400;
-          statusMessage.push(
-            `Unsuccessful upload: Salary input '${
+          statusDetail.push(
+            `Salary input '${
               employee.salary
             }' received, expected numerical value >= 0.0 (Row ${index + 1})`
           );
@@ -89,21 +90,18 @@ async function insertOrUpdateEmployee(employees) {
         }).session(uploadSession);
         if (employeeSearchByLogin) {
           if (employeeSearchByLogin.id === employee.id) {
-            // Do update (no change login)
+            // Do update (login no change)
             employeeSearchByLogin.name = employee.name;
             employeeSearchByLogin.salary = employee.salary;
             await employeeSearchByLogin.save();
           } else {
             statusCode = 400;
-            statusMessage.push(
-              `Unsuccessful upload: Duplicate login '${
-                employee.login
-              }' detected (Row ${index + 1})`
+            statusDetail.push(
+              `Duplicate login '${employee.login}' detected (Row ${index + 1})`
             );
           }
         } else {
-          // Do insert or update (change login)
-          console.log(employee);
+          // Do insert or update (login change) without login conflicts
           await Employee.findOneAndUpdate({ id: employee.id }, employee, {
             upsert: true,
             runValidators: true,
@@ -112,10 +110,11 @@ async function insertOrUpdateEmployee(employees) {
         }
       }
       if (statusCode) {
+        statusMessage = "Upload failed";
         await uploadSession.abortTransaction();
       } else {
         statusCode = 200;
-        statusMessage.push("Successful upload!");
+        statusMessage = "Successful upload";
       }
     }, opts);
   } catch (err) {
@@ -123,7 +122,7 @@ async function insertOrUpdateEmployee(employees) {
   } finally {
     await uploadSession.endSession();
   }
-  return { statusCode, statusMessage };
+  return { statusCode, statusMessage, statusDetail };
 }
 
 app.post(
@@ -132,32 +131,43 @@ app.post(
   asyncWrapper(async (req, res, next) => {
     const results = [];
     if (req.file) {
-      fs.createReadStream(req.file.path, { encoding: "utf8" })
+      const { originalname, path } = req.file;
+      fs.createReadStream(path, { encoding: "utf8" })
         .pipe(
           csv({
             mapHeaders: ({ header }) => header.toLowerCase().trim(),
           })
         )
-        .on("data", async (data) => {
+        .on("data", (data) => {
           results.push(data);
         })
         .on("end", async () => {
-          const { statusCode, statusMessage } = await insertOrUpdateEmployee(
-            results
-          ).catch((err) => console.log("Unsuccessful upload: " + err.message));
-          console.log(statusCode, statusMessage);
+          const { statusCode, statusMessage, statusDetail } =
+            await insertOrUpdateEmployee(results).catch((err) =>
+              console.log(err)
+            );
+          return res.status(statusCode).json({
+            status: statusCode,
+            message: statusMessage,
+            detail: statusDetail,
+            filename: originalname,
+          });
         })
         .on("error", (err) => {
-          console.log("Unsuccessful upload: " + err.message);
+          console.log(err);
         });
     } else {
-      console.log("Unsuccessful upload: Empty file");
+      res.status(400).json({
+        status: 400,
+        message: "Upload failed",
+        detail: ["Empty file"],
+      });
     }
-    res.redirect("/users/upload");
   })
 );
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+// Port for serving backend
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
   console.log("Server listening on port 8080!");
 });
