@@ -11,28 +11,46 @@ function useQuery() {
 }
 
 const Dashboard = () => {
+  const [totalPages, setTotalPages] = useState(0);
   const [employees, setEmployees] = useState([]);
   const [queryParams, setQueryParams] = useState({
     minSalary: 0,
-    maxSalary: 999999,
+    maxSalary: 999999999,
     offset: 0,
     limit: 30,
-    sort: "",
+    sort: "+id",
   });
 
-  let query = useQuery();
-  console.log(query.get("minSalary"), query.get("maxSalary"));
+  // let query = useQuery();
+  // console.log(query.get("minSalary"), query.get("maxSalary"));
 
   useEffect(() => {
+    const apiUrl =
+      "http://localhost:8080/api/users?minSalary=" +
+      queryParams.minSalary +
+      "&maxSalary=" +
+      queryParams.maxSalary +
+      "&offset=" +
+      queryParams.offset +
+      "&limit=" +
+      queryParams.limit +
+      "&sort=" +
+      queryParams.sort;
+    console.log(apiUrl);
     axios
-      .get("http://localhost:8080/api/users")
+      .get(apiUrl)
       .then((res) => {
-        setEmployees(res.data);
+        setEmployees(res.data.results);
+        setTotalPages(res.data.totalPages);
       })
       .catch((e) => {
         console.error(e);
       });
-  }, []);
+  }, [queryParams]);
+
+  const handlePaginationClick = (nextPage) => {
+    setQueryParams({ ...queryParams, offset: nextPage });
+  };
 
   if (employees.length === 0) {
     return (
@@ -69,6 +87,97 @@ const Dashboard = () => {
       );
     });
 
+    const renderPagination = [];
+    if (totalPages <= 7) {
+      for (let num = 1; num <= totalPages; num++) {
+        renderPagination.push(
+          <Pagination.Item
+            key={num}
+            onClick={() => handlePaginationClick(num - 1)}
+            active={num === queryParams.offset + 1}
+          >
+            {num}
+          </Pagination.Item>
+        );
+      }
+    } else {
+      if (queryParams.offset + 1 <= 4) {
+        for (let num = 1; num <= 5; num++) {
+          renderPagination.push(
+            <Pagination.Item
+              key={num}
+              onClick={() => handlePaginationClick(num - 1)}
+              active={num === queryParams.offset + 1}
+            >
+              {num}
+            </Pagination.Item>
+          );
+        }
+        renderPagination.push([
+          <Pagination.Ellipsis key={6} disabled />,
+          <Pagination.Item
+            key={7}
+            onClick={() => handlePaginationClick(totalPages - 1)}
+          >
+            {totalPages}
+          </Pagination.Item>,
+        ]);
+      } else if (queryParams.offset + 1 >= totalPages - 3) {
+        renderPagination.push([
+          <Pagination.Item key={1} onClick={() => handlePaginationClick(0)}>
+            1
+          </Pagination.Item>,
+          <Pagination.Ellipsis key={2} disabled />,
+        ]);
+        for (let num = totalPages - 4; num <= totalPages; num++) {
+          renderPagination.push(
+            <Pagination.Item
+              key={num}
+              onClick={() => handlePaginationClick(num - 1)}
+              active={num === queryParams.offset + 1}
+            >
+              {num}
+            </Pagination.Item>
+          );
+        }
+      } else {
+        renderPagination.push([
+          <Pagination.Item key={1} onClick={() => handlePaginationClick(0)}>
+            1
+          </Pagination.Item>,
+          <Pagination.Ellipsis key={2} disabled />,
+        ]);
+        for (
+          let num = queryParams.offset;
+          num <= queryParams.offset + 2;
+          num++
+        ) {
+          renderPagination.push(
+            <Pagination.Item
+              key={num}
+              onClick={() => handlePaginationClick(num - 1)}
+              active={num === queryParams.offset + 1}
+            >
+              {num}
+            </Pagination.Item>
+          );
+        }
+        renderPagination.push([
+          <Pagination.Ellipsis key={totalPages - 1} disabled />,
+          <Pagination.Item
+            key={totalPages}
+            onClick={() => handlePaginationClick(totalPages - 1)}
+          >
+            {totalPages}
+          </Pagination.Item>,
+        ]);
+      }
+    }
+
+    // Page number changes "offset"
+
+    // Title name, login, salary changes "sort"
+
     return (
       <Container>
         <h2>Employees</h2>
@@ -79,13 +188,19 @@ const Dashboard = () => {
           <tbody>{renderEmployeeData}</tbody>
         </Table>
         <Pagination>
-          <Pagination.Prev />
-          <Pagination.Item>{1}</Pagination.Item>
-          <Pagination.Item>{2}</Pagination.Item>
-          <Pagination.Item>{3}</Pagination.Item>
-          <Pagination.Ellipsis disabled />
-          <Pagination.Item>{10}</Pagination.Item>
-          <Pagination.Next />
+          <Pagination.Prev
+            onClick={() =>
+              handlePaginationClick(Math.max(0, queryParams.offset - 1))
+            }
+          />
+          {renderPagination}
+          <Pagination.Next
+            onClick={() =>
+              handlePaginationClick(
+                Math.min(queryParams.offset + 1, totalPages - 1)
+              )
+            }
+          />
         </Pagination>
       </Container>
     );
