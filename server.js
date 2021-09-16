@@ -32,40 +32,62 @@ app.use(express.json());
 // Enable cross-origin request (CORS) to let the server tell the browser it's permitted to use an additional origin
 app.use(cors());
 
+// Array to determine required query paramters in api call
+const queryStrings = ["minSalary", "maxSalary", "offset", "limit", "sort"];
+
+// Array to determine required sign for sort
+const sortSign = ["+", "-"];
+
 // Meant for front end API call to pull all employee data
 app.get(
   "/api/users",
   asyncWrapper(async (req, res, next) => {
-    let {
-      minSalary = 0,
-      maxSalary = 999999999,
-      offset = 0,
-      limit = 30,
-      sort = "+id",
-    } = req.query;
+    if (
+      !(
+        Object.keys(req.query).every((param) => queryStrings.includes(param)) &&
+        queryStrings.every((param) => Object.keys(req.query).includes(param)) &&
+        Object.values(req.query).every(
+          (param) => param !== null || param !== ""
+        )
+      )
+    ) {
+      return res.status(400);
+    }
+    let { minSalary, maxSalary, offset, limit, sort } = req.query;
     [minSalary, maxSalary, offset, limit] = [
       minSalary,
       maxSalary,
       offset,
       limit,
     ].map(Number);
-    const sortAscending = sort.charAt(0) === "+" ? true : false;
     const sortKey = sort.slice(1);
-    const totalEmployees = await Employee.count({
+    if (
+      maxSalary < minSalary ||
+      !sortSign.includes(sort.charAt(0)) ||
+      !headers.includes(sortKey)
+    ) {
+      return res.status(400);
+    }
+    // Max amount of employee data fetched in each API call is 30
+    limit = 30;
+    const sortAscending = sort.charAt(0) === "+" ? 1 : -1;
+    const sortObject = {};
+    sortObject[sortKey] = sortAscending;
+    const totalQuery = await Employee.count({
       salary: {
         $gte: minSalary,
         $lte: maxSalary,
       },
     });
-    const totalPages = Math.ceil(totalEmployees / 30);
+    const totalPages = Math.ceil(totalQuery / 30);
     const employees = await Employee.find({
       salary: { $gte: minSalary, $lte: maxSalary },
     })
       .skip(offset * limit)
       .limit(limit)
-      .sort();
+      .sort(sortObject);
     res.json({
-      totalEmployeeCount: totalEmployees,
+      totalQuery: totalQuery,
       totalPages: totalPages,
       results: employees,
     });
