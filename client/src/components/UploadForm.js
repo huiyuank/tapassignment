@@ -21,7 +21,7 @@ const UploadForm = React.forwardRef(
       "Submit"
     );
     return (
-      <div className="d-grid">
+      <div className="d-grid mb-4">
         <Form.Group controlId="formFile" className="mb-3">
           <Form.Label>CSV File</Form.Label>
           <Form.Control

@@ -13,6 +13,7 @@ import Col from "react-bootstrap/Col";
 function App() {
   const [uploading, setUploading] = useState(false);
   const [uploadResponse, setUploadResponse] = useState({});
+
   return (
     <Container fluid>
       <Row className="min-vh-100">
@@ -20,7 +21,7 @@ function App() {
           <Col xs={2} md={3} lg={2} className="p-0">
             <SideNavBar uploadResponse={uploadResponse} />
           </Col>
-          <Col className="d-flex align-items-start mt-5">
+          <Col className="d-flex align-items-start my-5">
             <Switch>
               <Route path="/users/upload">
                 <Upload

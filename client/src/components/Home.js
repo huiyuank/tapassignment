@@ -1,7 +1,7 @@
 import Container from "react-bootstrap/Container";
 import Table from "react-bootstrap/Table";
 
-const Home = (props) => {
+const Home = () => {
   return (
     <Container>
       <h2>Mission</h2>

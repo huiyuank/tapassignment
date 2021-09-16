@@ -17,10 +17,10 @@ const SideBar = ({ uploadResponse }) => {
     Object.keys(uploadResponse).length !== 0 ? (
       <Badge
         pill
-        className="ms-2"
+        className="ms-0 ms-md-2"
         bg={uploadResponse.status === 200 ? "success" : "danger"}
       >
-        1
+        {" "}
       </Badge>
     ) : null;
 
