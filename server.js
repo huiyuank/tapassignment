@@ -33,16 +33,23 @@ app.use(express.json());
 app.use(cors());
 
 // Meant for front end API call to pull all employee data
-app.get("/api/users", (req, res) => {
-  //   res.json();
-});
+app.get(
+  "/api/users",
+  asyncWrapper(async (req, res, next) => {
+    const employees = await Employee.find({});
+    res.json(employees);
+  })
+);
 
-// Meant for front end render form page
-app.get("/users/upload", (req, res) => {
-  res.sendFile(path.join(__dirname + "/form.html"));
-});
+// Array to determine required file types
+const fileTypes = [
+  "application/vnd.ms-excel",
+  "text/csv",
+  "text/x-csv",
+  "text/plain",
+];
 
-// Arrays to determine required headers in form
+// Array to determine required headers in form
 const headers = ["id", "login", "name", "salary"];
 
 /*
@@ -130,8 +137,17 @@ app.post(
   upload.single("employees"),
   asyncWrapper(async (req, res, next) => {
     const results = [];
+    const { originalname, path } = req.file;
     if (req.file) {
-      const { originalname, path } = req.file;
+      // Ensure file uploaded is strictly csv file and utf-8
+      if (!fileTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          status: 400,
+          message: "Upload failed",
+          detail: ["Only csv file with encoding utf-8 allowed "],
+          filename: originalname,
+        });
+      }
       fs.createReadStream(path, { encoding: "utf8" })
         .pipe(
           csv({
