@@ -26,7 +26,7 @@ db.once("open", function () {
 const Employee = require("./models/employee");
 
 // For parsing application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 // For parsing json
 app.use(express.json());
 // Enable cross-origin request (CORS) to let the server tell the browser it's permitted to use an additional origin
@@ -36,8 +36,39 @@ app.use(cors());
 app.get(
   "/api/users",
   asyncWrapper(async (req, res, next) => {
-    const employees = await Employee.find({});
-    res.json(employees);
+    let {
+      minSalary = 0,
+      maxSalary = 999999999,
+      offset = 0,
+      limit = 30,
+      sort = "+id",
+    } = req.query;
+    [minSalary, maxSalary, offset, limit] = [
+      minSalary,
+      maxSalary,
+      offset,
+      limit,
+    ].map(Number);
+    const sortAscending = sort.charAt(0) === "+" ? true : false;
+    const sortKey = sort.slice(1);
+    const totalEmployees = await Employee.count({
+      salary: {
+        $gte: minSalary,
+        $lte: maxSalary,
+      },
+    });
+    const totalPages = Math.ceil(totalEmployees / 30);
+    const employees = await Employee.find({
+      salary: { $gte: minSalary, $lte: maxSalary },
+    })
+      .skip(offset * limit)
+      .limit(limit)
+      .sort();
+    res.json({
+      totalEmployeeCount: totalEmployees,
+      totalPages: totalPages,
+      results: employees,
+    });
   })
 );
 
