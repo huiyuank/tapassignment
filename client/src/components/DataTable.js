@@ -2,17 +2,38 @@ import Table from "react-bootstrap/Table";
 import {
   PencilFill,
   TrashFill,
-  CaretDownFill,
-  CaretUpFill,
+  SortUpAlt,
+  SortDown,
 } from "react-bootstrap-icons";
 
-const DataTable = ({ employees }) => {
+const nonHeaders = ["_id", "__v"];
+
+const DataTable = ({ employees, sortParams, handleSortClick }) => {
   const renderTableHeaders = Object.keys(employees[0]).map((header, idx) => {
-    if (header !== "_id" && header !== "__v") {
+    if (!nonHeaders.includes(header)) {
+      const sortButton =
+        sortParams[header] < 0 ? (
+          <SortDown
+            role="button"
+            className="ms-1"
+            onClick={() => handleSortClick(header)}
+          />
+        ) : (
+          <SortUpAlt
+            role="button"
+            className="ms-1"
+            color={
+              sortParams[header] === 0
+                ? "rgba(128,128,128,0.7)"
+                : "currentColor"
+            }
+            onClick={() => handleSortClick(header)}
+          />
+        );
       return (
         <th key={idx}>
-          {header[0].toUpperCase() + header.substring(1)} <CaretUpFill />
-          <CaretDownFill />
+          {header[0].toUpperCase() + header.substring(1)}
+          {sortButton}
         </th>
       );
     } else {
