@@ -7,6 +7,11 @@ A MVP employee salary management web application built using MERN stack and othe
 1. Admin uploads employees' data with csv files
 2. Admin views employees' information on dashboard with filter and sort features
 
+Other user stories include:
+
+3. CRUD feature for admin to retrieve user data, modify name, login, salary ad delete given an id.
+4. UX when uploading large CSV files 
+
 Tech Stack
 
 - Node provides the backend environment for the application
@@ -20,6 +25,7 @@ Tech Stack
 
 ```
 $ git clone https://github.com/huiyuank/tapassignment/.git
+$ cd server
 $ npm install
 $ cd client
 $ npm install
@@ -37,7 +43,7 @@ mongod --replSet rs0
 
 ### Backend (Express, Node)
 
-In the salarymgtapp folder,
+In the server folder, run:
 
 ```
 node server.js
@@ -52,13 +58,13 @@ Connection to MongoDB successful!
 
 ### Frontend (React)
 
-In the client folder,
+In the client folder, run:
 
 ```
 $ npm start
 ```
 
-The frontend server is listening on port 3000 by default on create-react-app.
+The frontend server will start up a development build listening on port 3000 by default on create-react-app.
 
 ## Application architecture and assumptions
 
@@ -68,9 +74,21 @@ The frontend server is listening on port 3000 by default on create-react-app.
 
 ![uploadpage](https://user-images.githubusercontent.com/71057935/133646010-f502fd8e-815e-4b78-a4ff-b77b910cf121.jpg)
 
+#### Transactions in Mongo
+
+One single upload can be regarded as one transaction, where there may be multiple rows of insertion during one upload. If any (one or more) rows fail validation, the whole transaction is completely rejected and none of the data gets inserted. All or nothing.
+
+The following conditions are rejected for the upload, and a status code of 400 (bad user request) is returned:
+
+1. Empty file or non-csv file
+2. Empty fields for 'id', 'login', 'name', 'salary'
+3. Extra fields
+4. Salary input is not a number or is a number less than 0
+5. Duplicate login already in database
+
 #### Assumptions about data
 
-Rows starting with '#' are ignored refer to records with 'id' field starting with '#'.
+Rows starting with '#', ie. any record with 'id' field starting with '#' are ignored. It will be detected and shown as a warning as a response post upload.
 
 ### Employee dashboard feature (User Story 2)
 
