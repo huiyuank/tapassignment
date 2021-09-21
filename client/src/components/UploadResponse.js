@@ -1,20 +1,19 @@
 import Alert from "react-bootstrap/esm/Alert";
 
 const UploadResponse = ({ uploadResponse, setUploadResponse }) => {
+  const { status, message, detail, filename } = uploadResponse;
   if (Object.keys(uploadResponse).length !== 0) {
-    const detailMessages = uploadResponse.detail.map((det, idx) => (
-      <p key={idx}>{det}</p>
-    ));
+    const detailMessages = detail.map((det, idx) => <p key={idx}>{det}</p>);
     return (
       <Alert
-        variant={uploadResponse.status === 200 ? "success" : "danger"}
+        variant={status === 200 ? "success" : "danger"}
         onClose={() => setUploadResponse({})}
         dismissible
       >
-        <Alert.Heading>{uploadResponse.message}</Alert.Heading>
+        <Alert.Heading>{message}</Alert.Heading>
         <p>
-          '{uploadResponse.filename}'{" "}
-          {uploadResponse.status === 200
+          '{filename}'{" "}
+          {status === 200
             ? "has been uploaded successfully"
             : "has been rejected"}
           .

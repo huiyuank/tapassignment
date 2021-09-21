@@ -1,7 +1,7 @@
 import Pagination from "react-bootstrap/esm/Pagination";
 
 const TablePagination = ({
-  queryParams,
+  pageParams: { offset } = {},
   totalPages,
   handlePaginationClick,
 }) => {
@@ -12,20 +12,20 @@ const TablePagination = ({
         <Pagination.Item
           key={num}
           onClick={() => handlePaginationClick(num - 1)}
-          active={num === queryParams.offset + 1}
+          active={num === offset + 1}
         >
           {num}
         </Pagination.Item>
       );
     }
   } else {
-    if (queryParams.offset + 1 <= 4) {
+    if (offset + 1 <= 4) {
       for (let num = 1; num <= 5; num++) {
         renderPagination.push(
           <Pagination.Item
             key={num}
             onClick={() => handlePaginationClick(num - 1)}
-            active={num === queryParams.offset + 1}
+            active={num === offset + 1}
           >
             {num}
           </Pagination.Item>
@@ -40,7 +40,7 @@ const TablePagination = ({
           {totalPages}
         </Pagination.Item>,
       ]);
-    } else if (queryParams.offset + 1 >= totalPages - 3) {
+    } else if (offset + 1 >= totalPages - 3) {
       renderPagination.push([
         <Pagination.Item key={1} onClick={() => handlePaginationClick(0)}>
           1
@@ -52,7 +52,7 @@ const TablePagination = ({
           <Pagination.Item
             key={num}
             onClick={() => handlePaginationClick(num - 1)}
-            active={num === queryParams.offset + 1}
+            active={num === offset + 1}
           >
             {num}
           </Pagination.Item>
@@ -65,12 +65,12 @@ const TablePagination = ({
         </Pagination.Item>,
         <Pagination.Ellipsis key={2} disabled />,
       ]);
-      for (let num = queryParams.offset; num <= queryParams.offset + 2; num++) {
+      for (let num = offset; num <= offset + 2; num++) {
         renderPagination.push(
           <Pagination.Item
             key={num}
             onClick={() => handlePaginationClick(num - 1)}
-            active={num === queryParams.offset + 1}
+            active={num === offset + 1}
           >
             {num}
           </Pagination.Item>
@@ -90,16 +90,12 @@ const TablePagination = ({
   return (
     <Pagination>
       <Pagination.Prev
-        onClick={() =>
-          handlePaginationClick(Math.max(0, queryParams.offset - 1))
-        }
+        onClick={() => handlePaginationClick(Math.max(0, offset - 1))}
       />
       {renderPagination}
       <Pagination.Next
         onClick={() =>
-          handlePaginationClick(
-            Math.min(queryParams.offset + 1, totalPages - 1)
-          )
+          handlePaginationClick(Math.min(offset + 1, totalPages - 1))
         }
       />
     </Pagination>
