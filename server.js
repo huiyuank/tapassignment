@@ -53,7 +53,8 @@ app.get(
     ) {
       return res.status(400);
     }
-    let { minSalary, maxSalary, offset, limit, sort } = req.query;
+    // Max amount of employee data fetched in each API call is 30
+    let { minSalary, maxSalary, offset, limit = 30, sort } = req.query;
     [minSalary, maxSalary, offset, limit] = [
       minSalary,
       maxSalary,
@@ -68,11 +69,9 @@ app.get(
     ) {
       return res.status(400);
     }
-    // Max amount of employee data fetched in each API call is 30
-    limit = 30;
-    const sortAscending = sort.charAt(0) === "+" ? 1 : -1;
+    const sortAsc = sort.charAt(0) === "+" ? 1 : -1;
     const sortObject = {};
-    sortObject[sortKey] = sortAscending;
+    sortObject[sortKey] = sortAsc;
     const totalQuery = await Employee.count({
       salary: {
         $gte: minSalary,
@@ -190,8 +189,8 @@ app.post(
   upload.single("employees"),
   asyncWrapper(async (req, res, next) => {
     const results = [];
-    const { originalname, path } = req.file;
     if (req.file) {
+      const { originalname, path } = req.file;
       // Ensure file uploaded is strictly csv file and utf-8
       if (!fileTypes.includes(req.file.mimetype)) {
         return res.status(400).json({
