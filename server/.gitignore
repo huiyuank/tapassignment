@@ -1,6 +1,6 @@
 # dependencies
 /node_modules
 
+#misc
 /uploads
-
 package-lock.json
