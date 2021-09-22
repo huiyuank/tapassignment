@@ -2,6 +2,8 @@
 
 ## Description
 
+### Overview
+
 A MVP employee salary management web application built using MERN stack and other third party libraries and APIs. The application mainly supports two user stories:
 
 1. Admin uploads employees' data with csv files
@@ -9,10 +11,10 @@ A MVP employee salary management web application built using MERN stack and othe
 
 Other user stories include:
 
-3. CRUD feature for admin to retrieve user data, modify name, login, salary ad delete given an id.
+3. CRUD feature for admin to retrieve user data, modify name, login, salary, and delete given an id.
 4. UX when uploading large CSV files 
 
-Tech Stack
+### Tech Stack
 
 - Node provides the backend environment for the application
 - Express exposes middleware to handle requests, routes and responses
@@ -21,8 +23,12 @@ Tech Stack
 
 ## Install
 
+1. [MongoDB v4.4^](https://docs.mongodb.com/manual/administration/install-community/)
+2. [Node.js v14.17.6^](https://nodejs.org/en/download/) and [npm v6.14.15^](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+
 ## Set up
 
+Run the following commands to set up the front end and back end server on your local machine:
 ```
 $ git clone https://github.com/huiyuank/tapassignment/.git
 $ cd server
@@ -96,7 +102,33 @@ Rows starting with '#', ie. any record with 'id' field starting with '#' are ign
 
 ![userspage](https://user-images.githubusercontent.com/71057935/133647530-89ef36d5-939e-4fb7-9e0d-5f2b36565293.jpg)
 
-On rendering the dashboard, API to the backend server is called (GET /api/users) to initialize the state. The backend handles the query to limit the query number, filter the salary and sort the results according to the parameters stored as state, which is manipulated by the functions of the components on the frontend interface.
+On rendering the dashboard, useEffect function makes an API call (GET /api/users) to the backend server to initialize the state. The backend handles the query to limit and offset the query count, filter the salary, and sort the results according to the parameters stored as state, which is manipulated by the functions of the components on the frontend interface.
+
+The query parameters have been decomposed into
+- parameters that control pagination,
+```
+const [pageParams, setPageParams] = useState({
+  offset: 0,
+  limit: 30,
+});
+```
+- parameters to filter the query by min and max salary, and
+```
+const [filterParams, setFilterParams] = useState([0, 999999999]);
+```
+- parameters to sort the query by.
+```
+const [sortParams, setSortParams] = useState({
+  id: 1,
+  login: 0,
+  name: 0,
+  salary: 0,
+});
+```
+
+#### Assumptions about data
+
+Only one key can be used to sort the query at one time, therefore, only one of the parameters can and must always be 1 or -1, which indicates that query is sorted by that particular key in ascending or descending order respectively, while 0 indicates that the key is not used for sorting.
 
 ### Better UX when uploading large files (User Story 4)
 
